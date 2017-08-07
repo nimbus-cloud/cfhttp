@@ -53,12 +53,18 @@ func NewStreamingClient() *http.Client {
 }
 
 func newClient(dialTimeout, keepAliveTimeout, timeout time.Duration) *http.Client {
+	// work around for Palo Potato dropping idle connections
+	// see http.DefaultTransport
+	if keepAliveTimeout == 0 {
+		keepAliveTimeout = 30*time.Second
+	}
 	return &http.Client{
 		Transport: &http.Transport{
 			Dial: (&net.Dialer{
 				Timeout:   dialTimeout,
 				KeepAlive: keepAliveTimeout,
 			}).Dial,
+			IdleConnTimeout: 180*time.Second,
 		},
 		Timeout: timeout,
 	}
